@@ -40,7 +40,7 @@ async function getStockHistory(symbol, period = "1y") {
 }
 
 /**
- * Get aggregated signals for a stock.
+ *
  * GET /api/signals/<symbol>
  */
 async function getSignals(symbol) {
