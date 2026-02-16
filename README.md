@@ -1,93 +1,251 @@
-# MacroPulse
+# Macropulse - Quantitative Stock Signals Platform
 
+A web application that provides quantitative analysis and trading signals for stocks using a multi-strategy ensemble approach. It combines **Momentum**, **Mean Reversion**, **Monte Carlo simulations**, and **Factor Models** to generate BUY/SELL/HOLD signals with confidence scores.
 
+---
 
-## Getting started
+## How to Run
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Prerequisites
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- **Python 3.10+**
+- **pip** (Python package manager)
+- A modern web browser (Chrome, Firefox, Edge)
 
-## Add your files
+### Step 1: Set up the Backend
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create a virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Step 2: Start the Server
+
+```bash
+# From the backend directory (with venv activated)
+python app.py
+```
+
+The server starts at **http://localhost:5000**
+
+### Step 3: Open the App
+
+Open your browser and go to:
+
+- **Dashboard:** http://localhost:5000/
+- **Stock Page Example:** http://localhost:5000/stock.html?symbol=AAPL
+
+That's it! No npm install, no build step needed. The frontend is pure HTML/CSS/JS served directly by Flask.
+
+---
+
+## Tech Stack
+
+| Layer    | Technology                          |
+| -------- | ----------------------------------- |
+| Frontend | Vanilla JS, HTML5, CSS3             |
+| Charts   | Chart.js 4.4.1 (CDN)               |
+| Icons    | Font Awesome 6.5.1 (CDN)           |
+| Backend  | Python Flask 3.1.0                  |
+| Data     | Yahoo Finance (yfinance) + fallback mock data |
+| Caching  | In-memory TTL cache (5 min)         |
+
+---
+
+## Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.cci.drexel.edu/cid/2526/ws1023/64/gd4/macropulse.git
-git branch -M main
-git push -uf origin main
+Macropulse/
+├── frontend/                      # Frontend web application
+│   ├── index.html                 # Dashboard / home page
+│   ├── stock.html                 # Individual stock details page
+│   ├── js/
+│   │   ├── api.js                 # API client wrapper with error handling
+│   │   ├── app.js                 # Dashboard logic (search, trending stocks)
+│   │   ├── stock.js               # Stock page logic (signals, metrics)
+│   │   └── charts.js              # Chart.js price & volume visualization
+│   └── css/
+│       └── style.css              # Full design system & styling (dark theme)
+│
+├── backend/                       # Flask Python backend
+│   ├── app.py                     # Flask entry point & server config
+│   ├── requirements.txt           # Python dependencies
+│   ├── routes/
+│   │   ├── search.py              # GET /api/search - stock search
+│   │   ├── stock.py               # GET /api/stock/* - stock info & history
+│   │   └── signals.py             # GET /api/signals/* - quant signals
+│   ├── services/
+│   │   └── data_fetcher.py        # Yahoo Finance integration, caching, mock data
+│   └── strategies/
+│       ├── signal_aggregator.py   # Weighted ensemble of all 4 strategies
+│       ├── momentum.py            # Momentum strategy (30% weight)
+│       ├── mean_reversion.py      # Mean reversion strategy (25% weight)
+│       ├── monte_carlo.py         # Monte Carlo simulation (25% weight)
+│       └── factor_model.py        # Multi-factor model (20% weight)
+│
+└── README.md
 ```
 
-## Integrate with your tools
+---
 
-* [Set up project integrations](https://gitlab.cci.drexel.edu/cid/2526/ws1023/64/gd4/macropulse/-/settings/integrations)
+## API Endpoints
 
-## Collaborate with your team
+| Method | Endpoint                          | Description                        |
+| ------ | --------------------------------- | ---------------------------------- |
+| GET    | `/api/search?q=<query>`          | Search stocks by name or symbol    |
+| GET    | `/api/stock/<symbol>`            | Get current stock info & metrics   |
+| GET    | `/api/stock/<symbol>/history?period=<period>` | Get OHLCV price history |
+| GET    | `/api/signals/<symbol>`          | Get quant signal (BUY/SELL/HOLD)   |
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+**Valid history periods:** `1mo`, `3mo`, `6mo`, `1y`, `2y`, `5y`
 
-## Test and Deploy
+### Example Responses
 
-Use the built-in continuous integration in GitLab.
+**Search:**
+```
+GET /api/search?q=apple
+→ [{ "symbol": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ" }]
+```
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+**Stock Info:**
+```
+GET /api/stock/AAPL
+→ { "symbol": "AAPL", "name": "Apple Inc.", "price": 189.84, "change": 2.45, "changePercent": 1.31, "volume": 54230100, "marketCap": 2950000000000, ... }
+```
 
-***
+**Signals:**
+```
+GET /api/signals/AAPL
+→ { "signal": "BUY", "confidence": 72, "strategies": { "momentum": {...}, "mean_reversion": {...}, "monte_carlo": {...}, "factor_model": {...} } }
+```
 
-# Editing this README
+---
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Features
 
-## Suggestions for a good README
+### Dashboard (Home Page)
+- **Real-time search** with debounced autocomplete (350ms)
+- **Trending stocks grid** — AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA
+- **Popular watchlist** — META, JPM, V, JNJ, WMT, DIS
+- Color-coded stock cards (green = up, red = down)
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Stock Details Page
+- Stock name, symbol, sector, current price with change indicator
+- **Quant signal badge** (BUY/SELL/HOLD) with confidence bar
+- **Strategy breakdown** — 4 cards showing each strategy's individual signal and score
+- **Key metrics** — Market Cap, Volume, 52W High/Low, P/E Ratio, Forward P/E
+- **Interactive price chart** with time period selector (1M, 3M, 6M, 1Y, 2Y, 5Y)
+- Volume bars overlaid on the price chart
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Quantitative Strategies
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The signal engine combines 4 independent strategies using weighted ensemble voting:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 1. Momentum (30% weight)
+- Analyzes 12-month absolute return
+- Rate of Change (20-day and 60-day)
+- Relative outperformance vs S&P 500 (SPY)
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### 2. Mean Reversion (25% weight)
+- Z-score of current price vs 20-day moving average
+- Bollinger Band %B indicator
+- Identifies oversold (buy) and overbought (sell) conditions
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### 3. Monte Carlo Simulation (25% weight)
+- 1,000 simulated price paths using Geometric Brownian Motion
+- 30-day forecast horizon
+- Uses historical volatility and drift from 252-day data
+- Signal based on probability of price increase
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 4. Factor Model (20% weight)
+- **Value factor (35%):** P/E ratio scoring
+- **Quality factor (30%):** ROE and profit margins
+- **Volatility factor (35%):** Lower volatility preferred
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Final Signal
+| Aggregate Score | Signal |
+| --------------- | ------ |
+| > 0.15          | BUY    |
+| < -0.15         | SELL   |
+| -0.15 to 0.15   | HOLD   |
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Confidence ranges from 30% to 100% based on score magnitude.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+---
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Data & Caching
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- **Primary source:** Yahoo Finance via `yfinance` library (live market data)
+- **Fallback:** Built-in mock data for 12 stocks (works offline)
+- **Cache:** In-memory with 5-minute TTL — reduces redundant API calls
+- **No database required** — all data is fetched at runtime
 
-## License
-For open source projects, say how it is licensed.
+The app automatically falls back to mock data if Yahoo Finance is unreachable, so it works without an internet connection.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+---
+
+## Supported Stocks (Mock Data Fallback)
+
+AAPL, MSFT, GOOGL, AMZN, NVDA, TSLA, META, JPM, V, JNJ, WMT, DIS
+
+With an internet connection, you can search for any stock available on Yahoo Finance.
+
+---
+
+## Design
+
+- Dark theme inspired by GitHub's dark mode
+- Color palette: `#0d1117` (background), `#58a6ff` (accent blue), `#3fb950` (buy/green), `#f85149` (sell/red), `#d29922` (hold/yellow)
+- Fully responsive layout
+- Max container width: 1200px
+
+---
+
+## Dependencies
+
+### Backend (requirements.txt)
+```
+flask==3.1.0
+flask-cors==5.0.1
+yfinance==0.2.51
+numpy==2.2.3
+pandas==2.2.3
+```
+
+### Frontend (loaded via CDN, no install needed)
+- Chart.js 4.4.1
+- Font Awesome 6.5.1
+
+---
+
+## Data Flow
+
+```
+User Action → Frontend JS → HTTP Request → Flask Route → Data Fetcher
+    → Check Cache → Hit? Return cached : Fetch from Yahoo Finance / Mock
+    → Store in Cache → Return JSON → Frontend renders UI
+```
+
+---
+
+## Notes
+
+- The Flask server runs in **debug mode** by default (for development)
+- CORS is fully enabled (any origin allowed)
+- No authentication or user accounts
+- No persistent storage — cache resets on server restart
+- For production use, consider adding a WSGI server (gunicorn), rate limiting, and authentication
