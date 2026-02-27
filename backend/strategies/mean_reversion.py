@@ -17,13 +17,17 @@ def calculate_mean_reversion(symbol):
 
         closes = df["Close"].values
 
-        # 20-day rolling statistics
-        window = 20
-        rolling_mean = np.mean(closes[-window:])
-        rolling_std = np.std(closes[-window:], ddof=1)
+        # Use a 50-day lookback for the mean so a recent crash/spike is
+        # measured against a longer baseline (more sensitive to reversions).
+        # Keep the 20-day window for std to reflect recent volatility.
+        window   = 20
+        lookback = min(50, len(closes))
+        rolling_mean = np.mean(closes[-lookback:])
+        rolling_std  = np.std(closes[-window:], ddof=1)
 
         if rolling_std == 0:
-            return None
+            return {"score": 0.0, "signal": "HOLD",
+                    "details": "Insufficient price variation"}
 
         current_price = closes[-1]
 

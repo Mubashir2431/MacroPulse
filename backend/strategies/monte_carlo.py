@@ -70,8 +70,10 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
         # Base score from probability of price increase
         prob_score = (prob_higher - 0.5) * 4  # maps 0.5 → 0, 0.75 → 1, 0.25 → -1
 
-        # Risk penalty: high VaR reduces confidence in the signal
-        risk_penalty = max(0, var_95 - 0.10) * 2  # penalty kicks in above 10% VaR
+        # Blend VaR and CVaR for the risk penalty — CVaR (Expected Shortfall)
+        # captures tail risk beyond VaR and is a more conservative measure.
+        combined_risk = 0.4 * var_95 + 0.6 * cvar_95
+        risk_penalty = max(0, combined_risk - 0.10) * 2  # kicks in above 10%
         adjusted_score = prob_score - np.sign(prob_score) * risk_penalty
 
         score = float(np.clip(adjusted_score, -1, 1))
@@ -86,7 +88,7 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
         details = (
             f"{prob_higher * 100:.0f}% prob higher in {forecast_days}d, "
             f"range ${p5:.2f}-${p95:.2f}, "
-            f"VaR {var_95 * 100:.1f}%"
+            f"VaR {var_95 * 100:.1f}%, CVaR {cvar_95 * 100:.1f}%"
         )
 
         return {

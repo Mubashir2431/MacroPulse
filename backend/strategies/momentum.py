@@ -35,8 +35,8 @@ def calculate_momentum(symbol):
         # Absolute: positive return = bullish
         abs_signal = np.clip(total_return * 2, -1, 1)
 
-        # ROC combined (short + medium term)
-        roc_signal = np.clip((roc_20 * 3 + roc_60 * 2) / 2, -1, 1)
+        # ROC combined (short + medium term) — weighted avg: weights sum to 5
+        roc_signal = np.clip((roc_20 * 3 + roc_60 * 2) / 5, -1, 1)
 
         # Relative: outperforming benchmark = bullish
         rel_signal = np.clip(relative_score * 3, -1, 1)

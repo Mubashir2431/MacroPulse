@@ -90,17 +90,24 @@ def get_aggregated_signal(symbol):
     # Base confidence from score magnitude
     base_confidence = abs(final_score) * 100 + 40
 
-    # Agreement bonus: if all active strategies agree on direction, boost confidence
+    # Agreement bonus: magnitude-weighted — a strategy with score 0.9 agreeing
+    # carries more weight than one with score 0.05 agreeing.
     if active_strategies >= 2:
-        agreeing = sum(
-            1 for r in results.values()
-            if r is not None and (
-                (r["score"] > 0 and final_score > 0) or
-                (r["score"] < 0 and final_score < 0)
-            )
+        total_magnitude = sum(
+            abs(r["score"]) for r in results.values() if r is not None
         )
-        agreement_ratio = agreeing / active_strategies
-        # Up to 10% bonus for full agreement
+        if total_magnitude > 0:
+            aligned_magnitude = sum(
+                abs(r["score"]) for r in results.values()
+                if r is not None and (
+                    (r["score"] > 0 and final_score > 0) or
+                    (r["score"] < 0 and final_score < 0)
+                )
+            )
+            agreement_ratio = aligned_magnitude / total_magnitude
+        else:
+            agreement_ratio = 0
+        # Up to 10% bonus for full magnitude-weighted agreement
         agreement_bonus = agreement_ratio * 10
     else:
         agreement_bonus = 0
