@@ -276,7 +276,7 @@ async function loadTrendingStocks() {
     }
 }
 
-async function loadWatchlistStocks() {
+/*async function loadWatchlistStocks() {
     const grid = document.getElementById("watchlist-grid");
 
     try {
@@ -298,7 +298,7 @@ async function loadWatchlistStocks() {
         grid.innerHTML = "";
     }
 }
-
+*/
 async function loadStockCard(symbol) {
     try {
         const data = await getStock(symbol);
