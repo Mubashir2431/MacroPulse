@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 from services.data_fetcher import get_historical_dataframe
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_momentum(symbol):
@@ -64,5 +67,6 @@ def calculate_momentum(symbol):
             "signal": signal,
             "details": details,
         }
-    except Exception as e:
+    except Exception:
+        logger.exception("Error calculating momentum for %s", symbol)
         return None

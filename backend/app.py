@@ -11,7 +11,9 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+
+    allowed_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5000").split(",")
+    CORS(app, origins=[o.strip() for o in allowed_origins])
 
     app.register_blueprint(search_bp, url_prefix="/api")
     app.register_blueprint(stock_bp, url_prefix="/api")
@@ -30,4 +32,5 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True, port=5000)
+    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug_mode, port=5000)

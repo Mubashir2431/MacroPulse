@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 from services.data_fetcher import get_historical_dataframe
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
@@ -97,4 +100,5 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
             "details": details,
         }
     except Exception:
+        logger.exception("Error calculating Monte Carlo for %s", symbol)
         return None

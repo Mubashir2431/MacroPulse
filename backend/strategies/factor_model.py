@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 from services.data_fetcher import get_ticker_info_raw, get_historical_dataframe
+
+logger = logging.getLogger(__name__)
 
 
 def _score_pe_ratio(pe):
@@ -137,4 +140,5 @@ def calculate_factor_model(symbol):
             "details": ", ".join(details_parts),
         }
     except Exception:
+        logger.exception("Error calculating factor model for %s", symbol)
         return None
