@@ -1,5 +1,8 @@
+import logging
 import numpy as np
 from services.data_fetcher import get_historical_dataframe
+
+logger = logging.getLogger(__name__)
 
 
 def _calculate_rsi(closes, period=14):
@@ -105,4 +108,5 @@ def calculate_mean_reversion(symbol):
             "details": details,
         }
     except Exception:
+        logger.exception("Error calculating mean reversion for %s", symbol)
         return None
