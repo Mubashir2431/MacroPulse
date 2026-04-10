@@ -5,7 +5,6 @@
 
 const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || `${window.location.origin}/api`;
 
-
 async function apiRequest(endpoint) {
     const response = await fetch(`${API_BASE}${endpoint}`);
     if (!response.ok) {
