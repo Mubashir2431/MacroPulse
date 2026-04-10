@@ -274,6 +274,12 @@ a:hover {
     color: var(--accent-blue);
 }
 
+/* Yash Patel, 04/10/2026 
+Added size for text on main page*/
+.saved-stocks-title {
+    margin-top: 8px;
+}
+
 /* ===== Trending / Movers Grid ===== */
 .stocks-grid {
     display: grid;
@@ -410,9 +416,14 @@ a:hover {
     font-weight: 600;
 }
 
+/* Yash Patel, 04/10/2026
+Added space below Saved Stocks title*/
+
+
 .stock-hero .sector-tag {
     color: var(--text-muted);
     font-size: 0.85rem;
+    margin-bottom: 12px;
 }
 
 .stock-price-block .current-price {
@@ -684,6 +695,29 @@ a:hover {
 .btn-primary:hover {
     opacity: 0.9;
 }
+
+/* Yash Patel, 04/10/2026 
+added details to a button to save a stock*/
+.btn-save-stock {
+    background: transparent;
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 6px 14px;
+    font-size: 0.82rem;
+}
+
+.btn-save-stock:hover:not(:disabled) {
+    background: rgba(88, 166, 255, 0.12);
+}
+
+.btn-save-stock.saved,
+.btn-save-stock:disabled {
+    background: rgba(63, 185, 80, 0.12);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+    cursor: default;
+}
+
 
 .empty-state {
     text-align: center;
