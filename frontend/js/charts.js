@@ -3,10 +3,21 @@
  */
 
 let priceChart = null;
+let lastChartRender = null;
 
 function renderPriceChart(canvasId, historyData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    lastChartRender = { canvasId, historyData };
+
+    const styles = getComputedStyle(document.documentElement);
+    const borderColor = styles.getPropertyValue("--border").trim();
+    const textPrimary = styles.getPropertyValue("--text-primary").trim();
+    const textSecondary = styles.getPropertyValue("--text-secondary").trim();
+    const bgSecondary = styles.getPropertyValue("--bg-secondary").trim();
+    const accentBlue = styles.getPropertyValue("--accent-blue").trim();
+    const accentGreen = styles.getPropertyValue("--accent-green").trim();
+    const accentRed = styles.getPropertyValue("--accent-red").trim();
 
     // Destroy existing chart
     if (priceChart) {
@@ -22,7 +33,7 @@ function renderPriceChart(canvasId, historyData) {
     const firstPrice = closePrices[0];
     const lastPrice = closePrices[closePrices.length - 1];
     const isUp = lastPrice >= firstPrice;
-    const lineColor = isUp ? "#3fb950" : "#f85149";
+    const lineColor = isUp ? accentGreen : accentRed;
     const fillColor = isUp ? "rgba(63, 185, 80, 0.08)" : "rgba(248, 81, 73, 0.08)";
 
     // Scale volumes to fit in bottom portion of chart
@@ -55,7 +66,7 @@ function renderPriceChart(canvasId, historyData) {
                     label: "Volume",
                     data: scaledVolumes,
                     type: "bar",
-                    backgroundColor: "rgba(88, 166, 255, 0.15)",
+                    backgroundColor: hexToRgba(accentBlue, 0.15),
                     borderColor: "transparent",
                     yAxisID: "y",
                     barPercentage: 0.8,
@@ -72,11 +83,11 @@ function renderPriceChart(canvasId, historyData) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: "#161b22",
-                    borderColor: "#30363d",
+                    backgroundColor: bgSecondary,
+                    borderColor: borderColor,
                     borderWidth: 1,
-                    titleColor: "#e6edf3",
-                    bodyColor: "#8b949e",
+                    titleColor: textPrimary,
+                    bodyColor: textSecondary,
                     padding: 12,
                     callbacks: {
                         label: function (context) {
@@ -91,24 +102,40 @@ function renderPriceChart(canvasId, historyData) {
             },
             scales: {
                 x: {
-                    grid: { color: "rgba(48, 54, 61, 0.5)" },
+                    grid: { color: hexToRgba(borderColor, 0.5) },
                     ticks: {
-                        color: "#6e7681",
+                        color: textSecondary,
                         maxTicksLimit: 8,
                         maxRotation: 0,
                     },
-                    border: { color: "#30363d" },
+                    border: { color: borderColor },
                 },
                 y: {
                     position: "right",
-                    grid: { color: "rgba(48, 54, 61, 0.5)" },
+                    grid: { color: hexToRgba(borderColor, 0.5) },
                     ticks: {
-                        color: "#6e7681",
+                        color: textSecondary,
                         callback: (val) => "$" + val.toFixed(0),
                     },
-                    border: { color: "#30363d" },
+                    border: { color: borderColor },
                 },
             },
         },
     });
 }
+
+function hexToRgba(color, alpha) {
+    const hex = color.replace("#", "").trim();
+    if (hex.length !== 6) return color;
+
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+window.addEventListener("macropulsePreferencesChanged", () => {
+    if (lastChartRender) {
+        renderPriceChart(lastChartRender.canvasId, lastChartRender.historyData);
+    }
+});
