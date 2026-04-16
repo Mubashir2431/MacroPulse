@@ -2,6 +2,11 @@
  * Macropulse - Chart.js price and volume charts.
  */
 
+/**
+ * More changes for CSV export
+ * Anurag Ravi 4/16/2026 
+ * 
+ */
 let priceChart = null;
 let lastChartRender = null;
 let lastChartData = null;
@@ -143,6 +148,8 @@ window.addEventListener("macropulsePreferencesChanged", () => {
 });
 /**
  * Export current chart data as CSV file
+ * Anurag Ravi 4/16/2026 
+ * 
  */
 function exportChartDataAsCSV() {
     if (!lastChartData || lastChartData.length === 0) {
