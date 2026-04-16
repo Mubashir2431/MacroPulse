@@ -4,11 +4,13 @@
 
 let priceChart = null;
 let lastChartRender = null;
+let lastChartData = null;
 
 function renderPriceChart(canvasId, historyData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     lastChartRender = { canvasId, historyData };
+    lastChartData = historyData;
 
     const styles = getComputedStyle(document.documentElement);
     const borderColor = styles.getPropertyValue("--border").trim();
