@@ -139,3 +139,32 @@ window.addEventListener("macropulsePreferencesChanged", () => {
         renderPriceChart(lastChartRender.canvasId, lastChartRender.historyData);
     }
 });
+/**
+ * Export current chart data as CSV file
+ */
+function exportChartDataAsCSV() {
+    if (!lastChartData || lastChartData.length === 0) {
+        alert("No chart data available to export");
+        return;
+    }
+
+    // Build CSV header and rows
+    let csvContent = "Date,Close Price,Volume\n";
+    lastChartData.forEach((dataPoint) => {
+        const date = dataPoint.date;
+        const close = dataPoint.close.toFixed(2);
+        const volume = Math.round(dataPoint.volume);
+        csvContent += `${date},${close},${volume}\n`;
+    });
+
+    // Create blob and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `chart-data-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+}
