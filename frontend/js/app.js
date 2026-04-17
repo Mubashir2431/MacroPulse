@@ -6,6 +6,10 @@
 const TRENDING_SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA"];
 const WATCHLIST_SYMBOLS = ["META", "JPM", "V", "JNJ", "WMT", "DIS"];
 
+/* Yash Patel, 04/17/2026
+Add new const variable and call function*/
+const SAVED_STOCKS_KEY = "macropulseSavedStocks";
+
 let searchTimeout = null;
 let selectedSearchIndex = -1;
 
@@ -13,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initSearch();
     loadTrendingStocks();
     loadWatchlistStocks();
+    loadSavedStocks();
 });
 
 // ===== Search =====
@@ -126,6 +131,23 @@ function navigateToStock(symbol) {
     window.location.href = `stock.html?symbol=${encodeURIComponent(symbol)}`;
 }
 
+/* Yash Patel, 04/17/2026 
+Retrieves, cleans, deduplicates, and returns saved stock symbols from localStorage safely*/
+function getSavedStocks() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SAVED_STOCKS_KEY) || "[]");
+        if (!Array.isArray(saved)) return [];
+
+        return saved
+            .map((symbol) => String(symbol || "").trim().toUpperCase())
+            .filter((symbol, index, arr) => symbol && arr.indexOf(symbol) === index);
+    } catch {
+        return [];
+    }
+}
+
+window.getSavedStocks = getSavedStocks;
+
 function getSearchResults(dropdown) {
     return Array.from(dropdown.querySelectorAll(".search-result-item"));
 }
@@ -222,6 +244,39 @@ async function loadWatchlistStocks() {
             grid.innerHTML = html;
         } else {
             grid.innerHTML = `<div class="empty-state"><i class="fa-solid fa-chart-bar"></i><p>Could not load watchlist stocks.</p></div>`;
+        }
+    } catch {
+        grid.innerHTML = "";
+    }
+}
+
+/* Yash Patel, 04/17/2026 
+Loads saved stocks, fetches cards, and displays successful results in grid*/
+async function loadSavedStocks() {
+    const grid = document.getElementById("saved-stocks-grid");
+    if (!grid) return;
+
+    const savedSymbols = getSavedStocks();
+
+    if (savedSymbols.length === 0) {
+        grid.innerHTML = "";
+        return;
+    }
+
+    try {
+        const cards = await Promise.allSettled(
+            savedSymbols.map((sym) => loadStockCard(sym))
+        );
+
+        const html = cards
+            .filter((r) => r.status === "fulfilled" && r.value)
+            .map((r) => r.value)
+            .join("");
+
+        if (html) {
+            grid.innerHTML = html;
+        } else {
+            grid.innerHTML = "";
         }
     } catch {
         grid.innerHTML = "";

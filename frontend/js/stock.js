@@ -13,8 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showError("No stock symbol provided.");
         return;
     }
+/* Yash Patel, 04/17/2026
+call new function with save button*/
 
     document.title = `${currentSymbol.toUpperCase()} - Macropulse`;
+    initSaveButton();
     loadStockPage(currentSymbol);
     initChartControls();
 });
@@ -53,8 +56,12 @@ function renderStockHero(data) {
     changeEl.className = `price-change ${isPositive ? "positive" : "negative"}`;
     changeEl.style.color = isPositive ? "var(--accent-green)" : "var(--accent-red)";
 
+/* Yash Patel, 04/27/2026
+Updates save button using current stock symbol*/
+
     // Key metrics
     renderMetrics(data);
+    updateSaveButton(data.symbol);
 }
 
 function renderMetrics(data) {
@@ -167,6 +174,50 @@ function initChartControls() {
             if (currentSymbol) loadChart(currentSymbol, period);
         });
     });
+}
+
+/* Yash Patel, 04/17/2026
+Initializes save button, stores unique stocks, and updates button state based on saved list*/
+function initSaveButton() {
+    const saveButton = document.getElementById("save-stock-btn");
+    if (!saveButton) return;
+
+    saveButton.addEventListener("click", () => {
+        if (!currentSymbol) return;
+
+        const normalizedSymbol = currentSymbol.toUpperCase();
+        const savedStocks = getStoredSavedStocks();
+
+        if (!savedStocks.includes(normalizedSymbol)) {
+            savedStocks.push(normalizedSymbol);
+            localStorage.setItem("macropulseSavedStocks", JSON.stringify(savedStocks));
+        }
+
+        updateSaveButton(normalizedSymbol);
+    });
+}
+
+function getStoredSavedStocks() {
+    try {
+        const saved = JSON.parse(localStorage.getItem("macropulseSavedStocks") || "[]");
+        if (!Array.isArray(saved)) return [];
+
+        return saved
+            .map((symbol) => String(symbol || "").trim().toUpperCase())
+            .filter((symbol, index, arr) => symbol && arr.indexOf(symbol) === index);
+    } catch {
+        return [];
+    }
+}
+
+function updateSaveButton(symbol) {
+    const saveButton = document.getElementById("save-stock-btn");
+    if (!saveButton) return;
+
+    const isSaved = getStoredSavedStocks().includes(String(symbol || "").toUpperCase());
+    saveButton.textContent = isSaved ? "Saved" : "Save";
+    saveButton.disabled = isSaved;
+    saveButton.classList.toggle("saved", isSaved);
 }
 
 // ===== Helpers =====
