@@ -5,7 +5,7 @@ from services.data_fetcher import get_historical_dataframe
 logger = logging.getLogger(__name__)
 
 
-def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
+def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=None):
     """
     Monte Carlo Price Simulation using Geometric Brownian Motion (GBM):
     - 1000 vectorized simulated price paths for performance
@@ -30,8 +30,10 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
 
         current_price = closes[-1]
 
-        # Vectorized GBM simulation (much faster than nested loops)
-        np.random.seed(42)  # reproducible results
+        # Mubashir - US12: Removed fixed seed so each request produces varied results.
+        # Pass seed= for reproducible results (e.g. testing).
+        if seed is not None:
+            np.random.seed(seed)
         dt = 1  # 1 trading day
 
         # Generate all random shocks at once: (simulations x days)
