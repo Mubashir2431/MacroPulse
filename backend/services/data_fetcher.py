@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import pandas as pd
@@ -5,7 +6,9 @@ from datetime import datetime, timedelta
 
 # Simple TTL cache: { key: (timestamp, data) }
 _cache = {}
-_DEFAULT_TTL = 300  # 5 minutes
+# Person 3 - US7/US9: TTL and timeout configurable via environment variables
+_DEFAULT_TTL = int(os.environ.get("CACHE_TTL", 300))
+_REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", 10))
 
 # Flag: set to True when yfinance is working
 _yfinance_available = None
@@ -33,7 +36,7 @@ def _check_yfinance():
     try:
         import yfinance as yf
         ticker = yf.Ticker("AAPL")
-        hist = ticker.history(period="5d")
+        hist = ticker.history(period="5d", timeout=_REQUEST_TIMEOUT)
         _yfinance_available = not hist.empty
     except Exception:
         _yfinance_available = False
@@ -264,7 +267,8 @@ def get_stock_history(symbol, period="1y"):
         try:
             import yfinance as yf
             ticker = yf.Ticker(symbol_upper)
-            hist = ticker.history(period=period)
+            # Person 3 - US9: Apply request timeout to external API call
+            hist = ticker.history(period=period, timeout=_REQUEST_TIMEOUT)
             if not hist.empty:
                 records = []
                 for date, row in hist.iterrows():
@@ -307,7 +311,8 @@ def get_historical_dataframe(symbol, period="1y"):
         try:
             import yfinance as yf
             ticker = yf.Ticker(symbol_upper)
-            df = ticker.history(period=period)
+            # Person 3 - US9: Apply request timeout to external API call
+            df = ticker.history(period=period, timeout=_REQUEST_TIMEOUT)
             if not df.empty:
                 _cache_set(cache_key, df)
                 return df
