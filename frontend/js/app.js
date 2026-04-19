@@ -102,7 +102,12 @@ async function performSearch(query) {
 
     try {
         const data = await searchStocks(query);
-        if (data.results.length === 0) {
+        // Person 1 - US8: Handle consistent error format from updated search API
+        if (data.error) {
+            dropdown.innerHTML = `<div class="search-no-results">${data.error}</div>`;
+            return;
+        }
+        if (!data.results || data.results.length === 0) {
             dropdown.innerHTML = `<div class="search-no-results">No results found for "${query}"</div>`;
             return;
         }
