@@ -32,12 +32,40 @@ async function loadStockPage(symbol) {
         document.getElementById("page-loading").style.display = "none";
         document.getElementById("stock-content").style.display = "block";
 
+        // Person 2 - Sprint 2: Show skeleton placeholders while signals and chart load
+        showMetricsSkeleton();
+        showStrategySkeleton();
+
         // Load signals and chart in parallel
         loadSignals(symbol);
         loadChart(symbol, "1y");
     } catch (err) {
         showError(err.message || `Could not find stock "${symbol}".`);
     }
+}
+
+// Person 2 - Sprint 2: Skeleton loaders for metrics and strategy sections
+function showMetricsSkeleton() {
+    const grid = document.getElementById("metrics-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(6).fill(`
+        <div class="metric-item">
+            <div class="skeleton skeleton-label"></div>
+            <div class="skeleton skeleton-value"></div>
+        </div>
+    `).join("");
+}
+
+function showStrategySkeleton() {
+    const grid = document.getElementById("strategies-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(4).fill(`
+        <div class="strategy-card">
+            <div class="skeleton skeleton-strategy-header"></div>
+            <div class="skeleton skeleton-strategy-score"></div>
+            <div class="skeleton skeleton-strategy-detail"></div>
+        </div>
+    `).join("");
 }
 
 function renderStockHero(data) {
@@ -154,12 +182,17 @@ function renderStrategies(breakdown) {
 // ===== Chart =====
 
 async function loadChart(symbol, period) {
+    // Person 2 - Sprint 2: Show loading overlay while chart data fetches
+    showChartLoading("price-chart");
     try {
         const data = await getStockHistory(symbol, period);
         if (data && data.history && data.history.length > 0) {
             renderPriceChart("price-chart", data.history);
+        } else {
+            hideChartLoading("price-chart");
         }
     } catch (err) {
+        hideChartLoading("price-chart");
         console.error("Chart load failed:", err);
     }
 }

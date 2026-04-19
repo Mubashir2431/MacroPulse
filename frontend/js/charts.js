@@ -11,11 +11,36 @@ let priceChart = null;
 let lastChartRender = null;
 let lastChartData = null;
 
+// Person 2 - Sprint 2: Show/hide loading overlay on chart wrapper
+function showChartLoading(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const wrapper = canvas.closest(".chart-canvas-wrapper");
+    if (!wrapper) return;
+    if (!wrapper.querySelector(".chart-loading-overlay")) {
+        const overlay = document.createElement("div");
+        overlay.className = "chart-loading-overlay";
+        overlay.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading chart...`;
+        wrapper.style.position = "relative";
+        wrapper.appendChild(overlay);
+    }
+}
+
+function hideChartLoading(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const wrapper = canvas.closest(".chart-canvas-wrapper");
+    if (!wrapper) return;
+    const overlay = wrapper.querySelector(".chart-loading-overlay");
+    if (overlay) overlay.remove();
+}
+
 function renderPriceChart(canvasId, historyData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     lastChartRender = { canvasId, historyData };
     lastChartData = historyData;
+    hideChartLoading(canvasId);
 
     const styles = getComputedStyle(document.documentElement);
     const borderColor = styles.getPropertyValue("--border").trim();

@@ -1048,3 +1048,37 @@ added details to a button to save a stock*/
         justify-content: center;
     }
 }
+
+/* ===== Person 2 - Sprint 2: Skeleton Loading States ===== */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+.skeleton {
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-card) 50%, var(--bg-tertiary) 75%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-label  { height: 12px; width: 60%; margin-bottom: 8px; }
+.skeleton-value  { height: 20px; width: 80%; }
+.skeleton-strategy-header { height: 16px; width: 70%; margin-bottom: 10px; }
+.skeleton-strategy-score  { height: 28px; width: 40%; margin-bottom: 8px; }
+.skeleton-strategy-detail { height: 12px; width: 90%; }
+
+/* Chart loading overlay */
+.chart-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 17, 23, 0.6);
+    border-radius: var(--radius);
+    z-index: 10;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    gap: 8px;
+}
