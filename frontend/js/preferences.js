@@ -36,6 +36,15 @@ function savePreferences(updates) {
     return nextPreferences;
 }
 
+function resetPreferences() {
+    localStorage.removeItem(MACROPULSE_PREFS_KEY);
+    const nextPreferences = { ...DEFAULT_PREFERENCES };
+
+    applyPreferences(nextPreferences);
+    window.dispatchEvent(new CustomEvent("macropulsePreferencesChanged", { detail: nextPreferences }));
+    return nextPreferences;
+}
+
 function applyPreferences(preferences = getPreferences()) {
     document.documentElement.setAttribute("data-theme", preferences.theme);
     updateProfileButton(preferences);
