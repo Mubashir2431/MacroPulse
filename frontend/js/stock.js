@@ -179,12 +179,18 @@ function renderStrategies(breakdown) {
 // ===== Chart =====
 
 async function loadChart(symbol, period) {
+    /* Anurag Ravi, 04/23/2026
+    Show loading overlay while chart data is being fetched */
+    showChartLoading("price-chart");
     try {
         const data = await getStockHistory(symbol, period);
         if (data && data.history && data.history.length > 0) {
             renderPriceChart("price-chart", data.history);
+        } else {
+            hideChartLoading("price-chart");
         }
     } catch (err) {
+        hideChartLoading("price-chart");
         console.error("Chart load failed:", err);
     }
 }
