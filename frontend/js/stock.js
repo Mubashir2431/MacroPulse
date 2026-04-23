@@ -40,6 +40,31 @@ async function loadStockPage(symbol) {
     }
 }
 
+/* Anurag Ravi, 04/23/2026
+Skeleton loader functions for the metrics and strategy sections */
+function showMetricsSkeleton() {
+    const grid = document.getElementById("metrics-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(6).fill(`
+        <div class="metric-item">
+            <div class="skeleton skeleton-label"></div>
+            <div class="skeleton skeleton-value"></div>
+        </div>
+    `).join("");
+}
+
+function showStrategySkeleton() {
+    const grid = document.getElementById("strategies-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(4).fill(`
+        <div class="strategy-card">
+            <div class="skeleton skeleton-strategy-header"></div>
+            <div class="skeleton skeleton-strategy-score"></div>
+            <div class="skeleton skeleton-strategy-detail"></div>
+        </div>
+    `).join("");
+}
+
 function renderStockHero(data) {
     document.getElementById("stock-name").textContent = data.name;
     document.getElementById("stock-symbol").textContent = data.symbol;
