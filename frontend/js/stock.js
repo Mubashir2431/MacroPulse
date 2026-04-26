@@ -32,9 +32,10 @@ async function loadStockPage(symbol) {
         document.getElementById("page-loading").style.display = "none";
         document.getElementById("stock-content").style.display = "block";
 
-        // Load signals and chart in parallel
+        // Load signals, chart, and signal history in parallel
         loadSignals(symbol);
         loadChart(symbol, "1y");
+        loadSignalHistory(symbol);
     } catch (err) {
         showError(err.message || `Could not find stock "${symbol}".`);
     }
@@ -249,6 +250,53 @@ function updateSaveButton(symbol) {
     saveButton.textContent = isSaved ? "Saved" : "Save";
     saveButton.disabled = isSaved;
     saveButton.classList.toggle("saved", isSaved);
+}
+
+// ===== Signal History (Anurag Ravi - US16) =====
+
+async function loadSignalHistory(symbol) {
+    const loadingEl = document.getElementById("history-loading");
+    const listEl = document.getElementById("signal-history-list");
+    if (!loadingEl || !listEl) return;
+
+    try {
+        const data = await getSignalHistory(symbol);
+        loadingEl.style.display = "none";
+        listEl.style.display = "block";
+
+        if (!data.history || data.history.length === 0) {
+            listEl.innerHTML = `<div class="empty-state" style="padding:1rem 0"><p>No history yet — signal will be recorded when you visit this page.</p></div>`;
+            return;
+        }
+
+        // Show most recent entries first
+        renderSignalHistory([...data.history].reverse());
+    } catch {
+        if (loadingEl) loadingEl.style.display = "none";
+    }
+}
+
+function renderSignalHistory(history) {
+    const listEl = document.getElementById("signal-history-list");
+    if (!listEl) return;
+
+    const rows = history.map((entry) => {
+        const signalLower = (entry.signal || "hold").toLowerCase();
+        const date = new Date(entry.timestamp);
+        const formatted = date.toLocaleString(undefined, {
+            month: "short", day: "numeric",
+            hour: "2-digit", minute: "2-digit",
+        });
+        return `
+            <div class="history-entry">
+                <span class="signal-badge-sm ${signalLower}">${entry.signal}</span>
+                <span class="history-confidence">${entry.confidence}% confidence</span>
+                <span class="history-timestamp">${formatted}</span>
+            </div>
+        `;
+    }).join("");
+
+    listEl.innerHTML = `<div class="history-list">${rows}</div>`;
 }
 
 // ===== Helpers =====
