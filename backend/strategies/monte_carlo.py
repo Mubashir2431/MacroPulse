@@ -1,11 +1,23 @@
 import logging
 import numpy as np
 from services.data_fetcher import get_historical_dataframe
+from strategies.config import (
+    MC_NUM_SIMULATIONS,
+    MC_FORECAST_DAYS,
+    MC_MIN_PERIODS,
+    MC_VAR_WEIGHT,
+    MC_CVAR_WEIGHT,
+    MC_RISK_THRESHOLD,
+    MC_RISK_MULTIPLIER,
+    MC_PROB_SCALE,
+    SIGNAL_BUY_THRESHOLD,
+    SIGNAL_SELL_THRESHOLD,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=None):
+def calculate_monte_carlo(symbol, num_simulations=MC_NUM_SIMULATIONS, forecast_days=MC_FORECAST_DAYS, seed=None):
     """
     Monte Carlo Price Simulation using Geometric Brownian Motion (GBM):
     - 1000 vectorized simulated price paths for performance
@@ -16,7 +28,7 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=N
     """
     try:
         df = get_historical_dataframe(symbol, period="1y")
-        if df is None or len(df) < 60:
+        if df is None or len(df) < MC_MIN_PERIODS:
             return None
 
         closes = df["Close"].values
@@ -74,19 +86,19 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=N
 
         # Risk-adjusted score: combine probability with risk metrics
         # Base score from probability of price increase
-        prob_score = (prob_higher - 0.5) * 4  # maps 0.5 → 0, 0.75 → 1, 0.25 → -1
+        prob_score = (prob_higher - 0.5) * MC_PROB_SCALE  # maps 0.5 → 0, 0.75 → 1, 0.25 → -1
 
         # Blend VaR and CVaR for the risk penalty — CVaR (Expected Shortfall)
         # captures tail risk beyond VaR and is a more conservative measure.
-        combined_risk = 0.4 * var_95 + 0.6 * cvar_95
-        risk_penalty = max(0, combined_risk - 0.10) * 2  # kicks in above 10%
+        combined_risk = MC_VAR_WEIGHT * var_95 + MC_CVAR_WEIGHT * cvar_95
+        risk_penalty = max(0, combined_risk - MC_RISK_THRESHOLD) * MC_RISK_MULTIPLIER  # kicks in above threshold
         adjusted_score = prob_score - np.sign(prob_score) * risk_penalty
 
         score = float(np.clip(adjusted_score, -1, 1))
 
-        if score > 0.2:
+        if score > SIGNAL_BUY_THRESHOLD:
             signal = "BUY"
-        elif score < -0.2:
+        elif score < SIGNAL_SELL_THRESHOLD:
             signal = "SELL"
         else:
             signal = "HOLD"
