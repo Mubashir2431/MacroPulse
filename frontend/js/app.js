@@ -216,8 +216,9 @@ async function loadWatchlistStocks() {
     }
 }
 
-/* Yash Patel, 04/17/2026 
+/* Yash Patel, 04/17/2026
 Loads saved stocks, fetches cards, and displays successful results in grid*/
+/* Kevin Ngo - US17: Each saved stock card shows BUY/SELL/HOLD signal and a remove button */
 async function loadSavedStocks() {
     const grid = document.getElementById("saved-stocks-grid");
     if (!grid) return;
@@ -231,7 +232,7 @@ async function loadSavedStocks() {
 
     try {
         const cards = await Promise.allSettled(
-            savedSymbols.map((sym) => loadStockCard(sym))
+            savedSymbols.map((sym) => loadSavedStockCard(sym))
         );
 
         const html = cards
@@ -241,6 +242,7 @@ async function loadSavedStocks() {
 
         if (html) {
             grid.innerHTML = html;
+            attachRemoveButtons(grid);
         } else {
             grid.innerHTML = "";
         }
@@ -248,6 +250,71 @@ async function loadSavedStocks() {
         grid.innerHTML = "";
     }
 }
+
+/* Kevin Ngo - US17: Loads a saved stock card with price data and BUY/SELL/HOLD signal badge */
+async function loadSavedStockCard(symbol) {
+    try {
+        const [stockData, signalData] = await Promise.allSettled([
+            getStock(symbol),
+            getSignals(symbol),
+        ]);
+
+        if (stockData.status !== "fulfilled" || !stockData.value) return null;
+        const data = stockData.value;
+
+        const changeClass = data.change >= 0 ? "positive" : "negative";
+        const changeIcon = data.change >= 0 ? "fa-caret-up" : "fa-caret-down";
+        const changeSign = data.change >= 0 ? "+" : "";
+
+        let signalBadge = "";
+        if (signalData.status === "fulfilled" && signalData.value) {
+            const sig = signalData.value.signal.toLowerCase();
+            signalBadge = `<span class="signal-badge-sm ${sig}" style="margin-left:auto">${signalData.value.signal}</span>`;
+        }
+
+        return `
+            <div class="stock-card" onclick="navigateToStock('${data.symbol}')">
+                <div class="stock-header">
+                    <div>
+                        <div class="ticker">${data.symbol}</div>
+                        <div class="stock-name">${data.name}</div>
+                    </div>
+                    ${signalBadge}
+                </div>
+                <div class="price">$${data.price.toFixed(2)}</div>
+                <div class="change ${changeClass}">
+                    <i class="fa-solid ${changeIcon}"></i>
+                    ${changeSign}${data.change.toFixed(2)} (${changeSign}${data.changePercent.toFixed(2)}%)
+                </div>
+                <button class="btn-remove-saved" data-symbol="${data.symbol}" onclick="event.stopPropagation(); removeSavedStock('${data.symbol}')">
+                    <i class="fa-solid fa-xmark"></i> Remove
+                </button>
+            </div>
+        `;
+    } catch {
+        return null;
+    }
+}
+
+/* Kevin Ngo - US17: Attaches click handlers to remove buttons already in the DOM */
+function attachRemoveButtons(grid) {
+    grid.querySelectorAll(".btn-remove-saved").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            removeSavedStock(btn.getAttribute("data-symbol"));
+        });
+    });
+}
+
+/* Kevin Ngo - US17: Removes a stock from saved list and refreshes the grid */
+function removeSavedStock(symbol) {
+    const normalizedSymbol = String(symbol || "").trim().toUpperCase();
+    const current = getSavedStocks().filter((s) => s !== normalizedSymbol);
+    localStorage.setItem(SAVED_STOCKS_KEY, JSON.stringify(current));
+    loadSavedStocks();
+}
+
+window.removeSavedStock = removeSavedStock;
 
 async function loadStockCard(symbol) {
     try {
