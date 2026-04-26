@@ -11,6 +11,8 @@ from flask_limiter.util import get_remote_address
 from routes.search import search_bp
 from routes.stock import stock_bp
 from routes.signals import signals_bp
+from routes.history import history_bp
+from routes.watchlist import watchlist_bp
 
 # Kevin Ngo, 4/21/26
 # Load environment variables from a .env file so sensitive config is not hardcoded.
@@ -44,11 +46,29 @@ def create_app():
     )
 
     # Kevin Ngo, 4/21/26
-    # Register API route blueprints under the /api prefix.
+    # Register API route blueprints under the /api/v1 prefix (versioned).
     # This keeps routes modular and organized.
-    app.register_blueprint(search_bp, url_prefix="/api")
-    app.register_blueprint(stock_bp, url_prefix="/api")
-    app.register_blueprint(signals_bp, url_prefix="/api")
+    # Person 3 - US14: Versioned API under /api/v1/
+    app.register_blueprint(search_bp, url_prefix="/api/v1")
+    app.register_blueprint(stock_bp, url_prefix="/api/v1")
+    app.register_blueprint(signals_bp, url_prefix="/api/v1")
+    app.register_blueprint(history_bp, url_prefix="/api/v1")
+    app.register_blueprint(watchlist_bp, url_prefix="/api/v1")
+
+    # Person 3 - US14: Legacy /api/ routes with deprecation header for backwards compatibility
+    app.register_blueprint(search_bp, url_prefix="/api", name="search_legacy")
+    app.register_blueprint(stock_bp, url_prefix="/api", name="stock_legacy")
+    app.register_blueprint(signals_bp, url_prefix="/api", name="signals_legacy")
+
+    @app.after_request
+    def add_deprecation_header(response):
+        if "/api/" in response.headers.get("Content-Location", "") or True:
+            # Only add deprecation header for /api/ (non-versioned) routes
+            from flask import request as flask_request
+            if flask_request.path.startswith("/api/") and not flask_request.path.startswith("/api/v1/"):
+                response.headers["Deprecation"] = "true"
+                response.headers["Link"] = flask_request.path.replace("/api/", "/api/v1/", 1)
+        return response
 
     # Kevin Ngo, 4/21/26
     # Health check endpoint used by monitoring tools to verify server status.
