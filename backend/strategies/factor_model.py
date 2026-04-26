@@ -1,6 +1,23 @@
 import logging
 import numpy as np
 from services.data_fetcher import get_ticker_info_raw, get_historical_dataframe
+from strategies.config import (
+    FACTOR_MIN_PERIODS,
+    FACTOR_ROE_CENTER,
+    FACTOR_ROE_SCALE,
+    FACTOR_MARGIN_CENTER,
+    FACTOR_MARGIN_SCALE,
+    FACTOR_VOL_NORMALIZATION,
+    FACTOR_SIZE_CENTER,
+    FACTOR_SIZE_SCALE,
+    FACTOR_WEIGHT_VALUE,
+    FACTOR_WEIGHT_GROWTH,
+    FACTOR_WEIGHT_QUALITY,
+    FACTOR_WEIGHT_VOLATILITY,
+    FACTOR_WEIGHT_SIZE,
+    SIGNAL_BUY_THRESHOLD,
+    SIGNAL_SELL_THRESHOLD,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +69,7 @@ def calculate_factor_model(symbol):
 
         if pe is not None and pe > 0:
             value_score = _score_pe_ratio(pe)
-            scores.append(("value", value_score, 0.25))
+            scores.append(("value", value_score, FACTOR_WEIGHT_VALUE))
             details_parts.append(f"P/E {pe:.1f}")
         else:
             details_parts.append("P/E N/A")
@@ -60,7 +77,7 @@ def calculate_factor_model(symbol):
         # --- Growth Factor: Earnings Growth ---
         growth_score = _score_earnings_growth(info)
         if growth_score is not None:
-            scores.append(("growth", growth_score, 0.15))
+            scores.append(("growth", growth_score, FACTOR_WEIGHT_GROWTH))
             details_parts.append(f"growth {growth_score:+.2f}")
         else:
             details_parts.append("growth N/A")
@@ -72,24 +89,24 @@ def calculate_factor_model(symbol):
         quality_scores = []
         if roe is not None:
             # ROE > 20% is excellent, < 5% is poor
-            roe_score = float(np.clip((roe - 0.10) * 5, -1, 1))
+            roe_score = float(np.clip((roe - FACTOR_ROE_CENTER) * FACTOR_ROE_SCALE, -1, 1))
             quality_scores.append(roe_score)
             details_parts.append(f"ROE {roe * 100:.1f}%")
 
         if profit_margin is not None:
             # Profit margin > 20% is strong, < 0% is poor
-            margin_score = float(np.clip((profit_margin - 0.05) * 5, -1, 1))
+            margin_score = float(np.clip((profit_margin - FACTOR_MARGIN_CENTER) * FACTOR_MARGIN_SCALE, -1, 1))
             quality_scores.append(margin_score)
 
         if quality_scores:
             quality_score = np.mean(quality_scores)
-            scores.append(("quality", float(quality_score), 0.25))
+            scores.append(("quality", float(quality_score), FACTOR_WEIGHT_QUALITY))
         else:
             details_parts.append("quality N/A")
 
         # --- Volatility Factor: Low-Vol Premium with Downside Risk ---
         df = get_historical_dataframe(symbol, period="1y")
-        if df is not None and len(df) >= 60:
+        if df is not None and len(df) >= FACTOR_MIN_PERIODS:
             daily_returns = df["Close"].pct_change().dropna().values
             annual_vol = np.std(daily_returns, ddof=1) * np.sqrt(252)
 
@@ -101,9 +118,9 @@ def calculate_factor_model(symbol):
             adjusted_vol = 0.6 * annual_vol + 0.4 * downside_vol
 
             # Lower volatility = better (low-vol premium)
-            vol_score = float(np.clip(1.0 - (adjusted_vol / 0.25), -1, 1))
+            vol_score = float(np.clip(1.0 - (adjusted_vol / FACTOR_VOL_NORMALIZATION), -1, 1))
 
-            scores.append(("volatility", vol_score, 0.20))
+            scores.append(("volatility", vol_score, FACTOR_WEIGHT_VOLATILITY))
             details_parts.append(f"vol {annual_vol * 100:.1f}%")
         else:
             details_parts.append("vol N/A")
@@ -114,8 +131,8 @@ def calculate_factor_model(symbol):
             # Large cap > $50B = stable, small cap < $2B = risky but higher upside
             log_cap = np.log10(market_cap)
             # Score: mega cap (12+) = 0.6, large (10-12) = 0.3, mid (9-10) = 0, small (<9) = -0.3
-            size_score = float(np.clip((log_cap - 10) * 0.5, -0.5, 0.7))
-            scores.append(("size", size_score, 0.15))
+            size_score = float(np.clip((log_cap - FACTOR_SIZE_CENTER) * FACTOR_SIZE_SCALE, -0.5, 0.7))
+            scores.append(("size", size_score, FACTOR_WEIGHT_SIZE))
         else:
             details_parts.append("mcap N/A")
 
@@ -127,9 +144,9 @@ def calculate_factor_model(symbol):
         combined = sum(s * w for _, s, w in scores) / total_weight if total_weight > 0 else 0
         combined = float(np.clip(combined, -1, 1))
 
-        if combined > 0.2:
+        if combined > SIGNAL_BUY_THRESHOLD:
             signal = "BUY"
-        elif combined < -0.2:
+        elif combined < SIGNAL_SELL_THRESHOLD:
             signal = "SELL"
         else:
             signal = "HOLD"
