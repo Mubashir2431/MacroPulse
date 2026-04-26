@@ -32,10 +32,6 @@ async function loadStockPage(symbol) {
         document.getElementById("page-loading").style.display = "none";
         document.getElementById("stock-content").style.display = "block";
 
-        // Person 2 - Sprint 2: Show skeleton placeholders while signals and chart load
-        showMetricsSkeleton();
-        showStrategySkeleton();
-
         // Load signals and chart in parallel
         loadSignals(symbol);
         loadChart(symbol, "1y");
@@ -44,7 +40,8 @@ async function loadStockPage(symbol) {
     }
 }
 
-// Person 2 - Sprint 2: Skeleton loaders for metrics and strategy sections
+/* Anurag Ravi, 04/23/2026
+Skeleton loader functions for the metrics and strategy sections */
 function showMetricsSkeleton() {
     const grid = document.getElementById("metrics-grid");
     if (!grid) return;
@@ -182,7 +179,8 @@ function renderStrategies(breakdown) {
 // ===== Chart =====
 
 async function loadChart(symbol, period) {
-    // Person 2 - Sprint 2: Show loading overlay while chart data fetches
+    /* Anurag Ravi, 04/23/2026
+    Show loading overlay while chart data is being fetched */
     showChartLoading("price-chart");
     try {
         const data = await getStockHistory(symbol, period);

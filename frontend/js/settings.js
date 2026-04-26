@@ -5,6 +5,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     initThemeControls();
     initProfileForm();
+    initResetControls();
     renderSettings(getPreferences());
 });
 
@@ -66,7 +67,23 @@ function initProfileForm() {
     });
 }
 
+function initResetControls() {
+    const resetButton = document.getElementById("reset-preferences");
+    const resetFeedback = document.getElementById("reset-feedback");
+    const imageInput = document.getElementById("profile-image-input");
+
+    resetButton.addEventListener("click", () => {
+        imageInput.value = "";
+        const preferences = resetPreferences();
+        renderSettings(preferences);
+        resetFeedback.textContent = "Preferences restored to default settings.";
+        resetFeedback.classList.add("is-visible");
+    });
+}
+
 function renderSettings(preferences) {
+    const resetFeedback = document.getElementById("reset-feedback");
+
     document.querySelectorAll("[data-theme-option]").forEach((button) => {
         button.classList.toggle("active", button.dataset.themeOption === preferences.theme);
     });
@@ -90,5 +107,10 @@ function renderSettings(preferences) {
         previewImage.hidden = true;
         previewInitials.hidden = false;
         previewInitials.textContent = getProfileInitials(preferences);
+    }
+
+    if (resetFeedback) {
+        resetFeedback.textContent = "";
+        resetFeedback.classList.remove("is-visible");
     }
 }

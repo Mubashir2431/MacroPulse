@@ -113,6 +113,30 @@
                     </div>
                 </form>
             </div>
+
+            <div class="settings-panel">
+                <div class="settings-panel-header">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <div>
+                        <h2>Reset Preferences</h2>
+                        <p>Restore the default theme and clear saved profile details from this browser.</p>
+                    </div>
+                </div>
+
+                <div class="reset-preferences-card">
+                    <p>
+                        This removes your saved theme, sign-in state, name, email, and profile picture
+                        from local storage.
+                    </p>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-secondary" id="reset-preferences">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Reset Preferences
+                        </button>
+                    </div>
+                    <p class="settings-feedback" id="reset-feedback" role="status" aria-live="polite"></p>
+                </div>
+            </div>
         </section>
     </main>
 

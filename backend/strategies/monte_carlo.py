@@ -30,8 +30,9 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=N
 
         current_price = closes[-1]
 
-        # Mubashir - US12: Removed fixed seed so each request produces varied results.
-        # Pass seed= for reproducible results (e.g. testing).
+        # Vectorized GBM simulation (much faster than nested loops)
+        # Mubashir - US12: Removed fixed seed so each request produces varied
+        # results reflecting real uncertainty. Pass seed= for reproducible testing.
         if seed is not None:
             np.random.seed(seed)
         dt = 1  # 1 trading day

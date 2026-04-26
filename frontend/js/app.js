@@ -93,45 +93,6 @@ function initSearch() {
     });
 }
 
-async function performSearch(query) {
-    const dropdown = document.getElementById("search-dropdown");
-    selectedSearchIndex = -1;
-
-    dropdown.innerHTML = `<div class="search-loading"><i class="fa-solid fa-spinner fa-spin"></i> Searching...</div>`;
-    dropdown.classList.add("active");
-
-    try {
-        const data = await searchStocks(query);
-        // Person 1 - US8: Handle consistent error format from updated search API
-        if (data.error) {
-            dropdown.innerHTML = `<div class="search-no-results">${data.error}</div>`;
-            return;
-        }
-        if (!data.results || data.results.length === 0) {
-            dropdown.innerHTML = `<div class="search-no-results">No results found for "${query}"</div>`;
-            return;
-        }
-
-        dropdown.innerHTML = data.results
-            .slice(0, 8)
-            .map(
-                (r) => `
-                <div class="search-result-item" onclick="navigateToStock('${r.symbol}')">
-                    <span class="symbol">${r.symbol}</span>
-                    <span class="name">${r.name}</span>
-                    <span class="exchange">${r.exchange}</span>
-                </div>
-            `
-            )
-            .join("");
-
-        attachSearchResultInteractions(dropdown);
-        updateSearchSelection(dropdown);
-    } catch (err) {
-        dropdown.innerHTML = `<div class="search-no-results">Search error. Is the backend running?</div>`;
-    }
-}
-
 function navigateToStock(symbol) {
     window.location.href = `stock.html?symbol=${encodeURIComponent(symbol)}`;
 }
