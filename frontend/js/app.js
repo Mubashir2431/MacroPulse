@@ -10,6 +10,12 @@ const WATCHLIST_SYMBOLS = ["META", "JPM", "V", "JNJ", "WMT", "DIS"];
 Add new const variable and call function*/
 const SAVED_STOCKS_KEY = "macropulseSavedStocks";
 
+/* Recent search storage
+ * Anurag Ravi 4/30/2026
+ */
+const RECENT_SEARCHES_KEY = "macropulseRecentSearches";
+const MAX_RECENT_SEARCHES = 5;
+
 let searchTimeout = null;
 let selectedSearchIndex = -1;
 
