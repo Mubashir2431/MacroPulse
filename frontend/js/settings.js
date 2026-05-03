@@ -5,6 +5,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     initThemeControls();
     initProfileForm();
+    initNotificationControls();
     initResetControls();
     renderSettings(getPreferences());
 });
@@ -67,6 +68,24 @@ function initProfileForm() {
     });
 }
 
+function initNotificationControls() {
+    const notificationMap = {
+        "price-alerts": "priceAlerts",
+        "daily-summary": "dailySummary",
+        "signal-alerts": "signalAlerts",
+        "weekly-digest": "weeklyDigest",
+    };
+
+    Object.entries(notificationMap).forEach(([inputId, preferenceKey]) => {
+        const input = document.getElementById(inputId);
+
+        input.addEventListener("change", () => {
+            savePreferences({ [preferenceKey]: input.checked });
+            renderSettings(getPreferences());
+        });
+    });
+}
+
 function initResetControls() {
     const resetButton = document.getElementById("reset-preferences");
     const resetFeedback = document.getElementById("reset-feedback");
@@ -90,6 +109,10 @@ function renderSettings(preferences) {
 
     document.getElementById("profile-name").value = preferences.name || "";
     document.getElementById("profile-email").value = preferences.email || "";
+    document.getElementById("price-alerts").checked = preferences.priceAlerts;
+    document.getElementById("daily-summary").checked = preferences.dailySummary;
+    document.getElementById("signal-alerts").checked = preferences.signalAlerts;
+    document.getElementById("weekly-digest").checked = preferences.weeklyDigest;
     document.getElementById("profile-preview-name").textContent =
         preferences.signedIn ? preferences.name || "Signed in" : "Guest";
     document.getElementById("profile-preview-email").textContent =

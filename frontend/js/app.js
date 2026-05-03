@@ -10,6 +10,12 @@ const WATCHLIST_SYMBOLS = ["META", "JPM", "V", "JNJ", "WMT", "DIS"];
 Add new const variable and call function*/
 const SAVED_STOCKS_KEY = "macropulseSavedStocks";
 
+/* Recent search storage
+ * Anurag Ravi 4/30/2026
+ */
+const RECENT_SEARCHES_KEY = "macropulseRecentSearches";
+const MAX_RECENT_SEARCHES = 5;
+
 let searchTimeout = null;
 let selectedSearchIndex = -1;
 
@@ -92,9 +98,48 @@ function initSearch() {
         }
     });
 }
+/* Yash Patel, 04/27/2026
+Fetches stock search results, updates dropdown UI, handles loading, no results, and errors.*/
+async function performSearch(query) {
+    const dropdown = document.getElementById("search-dropdown");
+    selectedSearchIndex = -1;
+
+    dropdown.innerHTML = `<div class="search-loading"><i class="fa-solid fa-spinner fa-spin"></i> Searching...</div>`;
+    dropdown.classList.add("active");
+
+    try {
+        const data = await searchStocks(query);
+        if (data.results.length === 0) {
+            dropdown.innerHTML = `<div class="search-no-results">No results found for "${query}"</div>`;
+            return;
+        }
+
+        dropdown.innerHTML = data.results
+            .slice(0, 8)
+            .map(
+                (r) => `
+                <div class="search-result-item" onclick="navigateToStock('${r.symbol}')">
+                    <span class="symbol">${r.symbol}</span>
+                    <span class="name">${r.name}</span>
+                    <span class="exchange">${r.exchange}</span>
+                </div>
+            `
+            )
+            .join("");
+
+        attachSearchResultInteractions(dropdown);
+        updateSearchSelection(dropdown);
+    } catch (err) {
+        dropdown.innerHTML = `<div class="search-no-results">Search error. Is the backend running?</div>`;
+    }
+}
 
 function navigateToStock(symbol) {
-    window.location.href = `stock.html?symbol=${encodeURIComponent(symbol)}`;
+    const normalizedSymbol = String(symbol || "").trim().toUpperCase();
+    if (!normalizedSymbol) return;
+
+    saveRecentSearch(normalizedSymbol);
+    window.location.href = `stock.html?symbol=${encodeURIComponent(normalizedSymbol)}`;
 }
 
 /* Yash Patel, 04/17/2026 
@@ -113,6 +158,63 @@ function getSavedStocks() {
 }
 
 window.getSavedStocks = getSavedStocks;
+
+/* Recent search helpers
+ * Anurag Ravi 4/20/2026
+ */
+function getRecentSearches() {
+    try {
+        const recent = JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || "[]");
+        if (!Array.isArray(recent)) return [];
+
+        return recent
+            .map((symbol) => String(symbol || "").trim().toUpperCase())
+            .filter((symbol, index, arr) => symbol && arr.indexOf(symbol) === index)
+            .slice(0, MAX_RECENT_SEARCHES);
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentSearch(symbol) {
+    const normalizedSymbol = String(symbol || "").trim().toUpperCase();
+    if (!normalizedSymbol) return;
+
+    const recent = getRecentSearches().filter((item) => item !== normalizedSymbol);
+    recent.unshift(normalizedSymbol);
+    localStorage.setItem(
+        RECENT_SEARCHES_KEY,
+        JSON.stringify(recent.slice(0, MAX_RECENT_SEARCHES))
+    );
+}
+
+function renderRecentSearches(dropdown) {
+    const recent = getRecentSearches();
+    selectedSearchIndex = -1;
+
+    if (recent.length === 0) {
+        dropdown.classList.remove("active");
+        dropdown.innerHTML = "";
+        return;
+    }
+
+    dropdown.innerHTML = `
+        <div class="search-loading">Recent searches</div>
+        ${recent
+            .map(
+                (symbol) => `
+                    <div class="search-result-item" onclick="navigateToStock('${symbol}')">
+                        <span class="symbol">${symbol}</span>
+                        <span class="name">Recent search</span>
+                    </div>
+                `
+            )
+            .join("")}
+    `;
+    dropdown.classList.add("active");
+    attachSearchResultInteractions(dropdown);
+    updateSearchSelection(dropdown);
+}
 
 function getSearchResults(dropdown) {
     return Array.from(dropdown.querySelectorAll(".search-result-item"));

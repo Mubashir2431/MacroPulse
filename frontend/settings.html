@@ -116,6 +116,50 @@
 
             <div class="settings-panel">
                 <div class="settings-panel-header">
+                    <i class="fa-solid fa-bell"></i>
+                    <div>
+                        <h2>Notification Preferences</h2>
+                        <p>Choose which market updates and alerts should stay enabled for this browser.</p>
+                    </div>
+                </div>
+
+                <form class="settings-form" id="notification-form">
+                    <label class="preference-toggle">
+                        <input type="checkbox" id="price-alerts">
+                        <span>
+                            <strong>Price Alerts</strong>
+                            <small>Save notifications for major stock price movements.</small>
+                        </span>
+                    </label>
+
+                    <label class="preference-toggle">
+                        <input type="checkbox" id="daily-summary">
+                        <span>
+                            <strong>Daily Market Summary</strong>
+                            <small>Keep the end-of-day market recap enabled.</small>
+                        </span>
+                    </label>
+
+                    <label class="preference-toggle">
+                        <input type="checkbox" id="signal-alerts">
+                        <span>
+                            <strong>Signal Change Alerts</strong>
+                            <small>Track when BUY, SELL, or HOLD signals change.</small>
+                        </span>
+                    </label>
+
+                    <label class="preference-toggle">
+                        <input type="checkbox" id="weekly-digest">
+                        <span>
+                            <strong>Weekly Portfolio Digest</strong>
+                            <small>Keep a weekly summary of portfolio highlights turned on.</small>
+                        </span>
+                    </label>
+                </form>
+            </div>
+
+            <div class="settings-panel">
+                <div class="settings-panel-header">
                     <i class="fa-solid fa-rotate-left"></i>
                     <div>
                         <h2>Reset Preferences</h2>

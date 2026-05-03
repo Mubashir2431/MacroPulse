@@ -24,8 +24,6 @@ from strategies.config import (
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 
 def _calculate_rsi(closes, period=MEAN_REV_RSI_PERIOD):
     """Calculate RSI using Wilder's smoothing method. Returns RSI value or None."""

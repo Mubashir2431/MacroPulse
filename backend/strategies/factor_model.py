@@ -21,8 +21,6 @@ from strategies.config import (
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 
 def _score_pe_ratio(pe):
     """Continuous P/E scoring using sigmoid-like curve centered at market median ~20."""

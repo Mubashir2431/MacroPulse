@@ -11,6 +11,10 @@ const DEFAULT_PREFERENCES = {
     name: "",
     email: "",
     profileImage: "",
+    priceAlerts: true,
+    dailySummary: false,
+    signalAlerts: true,
+    weeklyDigest: false,
 };
 
 function getPreferences() {

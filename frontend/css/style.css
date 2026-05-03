@@ -972,6 +972,45 @@ added details to a button to save a stock*/
     margin-top: 8px;
 }
 
+.preference-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+}
+
+.preference-toggle:hover {
+    border-color: var(--accent-blue);
+}
+
+.preference-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-blue);
+    margin-top: 2px;
+    flex: 0 0 auto;
+}
+
+.preference-toggle span {
+    display: grid;
+    gap: 2px;
+}
+
+.preference-toggle strong {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.preference-toggle small {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+}
+
 .reset-preferences-card {
     display: grid;
     gap: 14px;
