@@ -5,7 +5,7 @@ from services.data_fetcher import get_historical_dataframe
 logger = logging.getLogger(__name__)
 
 
-def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
+def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30, seed=None):
     """
     Monte Carlo Price Simulation using Geometric Brownian Motion (GBM):
     - 1000 vectorized simulated price paths for performance
@@ -13,6 +13,7 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
     - Calculates Value at Risk (VaR) and expected shortfall (CVaR)
     - Output: probability of price being higher in 30 days, expected range
     - Score from -1 (strong sell) to +1 (strong buy)
+    - seed: optional int for reproducible results (None = non-deterministic)
     """
     try:
         df = get_historical_dataframe(symbol, period="1y")
@@ -31,7 +32,8 @@ def calculate_monte_carlo(symbol, num_simulations=1000, forecast_days=30):
         current_price = closes[-1]
 
         # Vectorized GBM simulation (much faster than nested loops)
-        np.random.seed(42)  # reproducible results
+        if seed is not None:
+            np.random.seed(seed)
         dt = 1  # 1 trading day
 
         # Generate all random shocks at once: (simulations x days)

@@ -224,11 +224,11 @@ class TestMeanReversionStrategy(unittest.TestCase):
 
 class TestMonteCarloStrategy(unittest.TestCase):
 
-    def _run(self, prices):
+    def _run(self, prices, seed=None):
         from strategies.monte_carlo import calculate_monte_carlo
         with patch("strategies.monte_carlo.get_historical_dataframe",
                    return_value=_make_df(prices)):
-            return calculate_monte_carlo("TEST")
+            return calculate_monte_carlo("TEST", seed=seed)
 
     def test_has_required_keys(self):
         r = self._run(_uptrend())
@@ -256,10 +256,16 @@ class TestMonteCarloStrategy(unittest.TestCase):
         self.assertLess(r["score"], 0)
 
     def test_reproducibility(self):
-        """seed=42 guarantees identical output across repeated calls."""
-        r1 = self._run(_uptrend())
-        r2 = self._run(_uptrend())
+        """Explicit seed guarantees identical output across repeated calls."""
+        r1 = self._run(_uptrend(), seed=42)
+        r2 = self._run(_uptrend(), seed=42)
         self.assertEqual(r1["score"], r2["score"])
+
+    def test_no_seed_is_nondeterministic(self):
+        """Without a seed, two runs should produce different scores."""
+        r1 = self._run(_uptrend(), seed=None)
+        r2 = self._run(_uptrend(), seed=None)
+        self.assertNotEqual(r1["score"], r2["score"])
 
     def test_details_contains_var_and_cvar(self):
         """Improvement: CVaR should now appear alongside VaR in the details."""
