@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
 from strategies.signal_aggregator import get_aggregated_signal
+from services.signal_history import record_signal
 
 signals_bp = Blueprint("signals", __name__)
 
@@ -18,6 +19,9 @@ def signals(symbol):
         return jsonify({
             "error": f"Could not generate signals for '{symbol}'"
         }), 404
+
+    # Person 3 - US16: Record signal in history each time it is fetched
+    record_signal(symbol, result)
 
     # Add symbol to response for clarity in API output
     result["symbol"] = symbol

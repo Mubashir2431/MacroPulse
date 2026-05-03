@@ -6,12 +6,18 @@
 const TRENDING_SYMBOLS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA"];
 const WATCHLIST_SYMBOLS = ["META", "JPM", "V", "JNJ", "WMT", "DIS"];
 
+/* Yash Patel, 04/17/2026
+Add new const variable and call function*/
+const SAVED_STOCKS_KEY = "macropulseSavedStocks";
+
 let searchTimeout = null;
+let selectedSearchIndex = -1;
 
 document.addEventListener("DOMContentLoaded", () => {
     initSearch();
     loadTrendingStocks();
     loadWatchlistStocks();
+    loadSavedStocks();
 });
 
 // ===== Search =====
@@ -23,9 +29,11 @@ function initSearch() {
     input.addEventListener("input", () => {
         const query = input.value.trim();
         if (searchTimeout) clearTimeout(searchTimeout);
+        selectedSearchIndex = -1;
 
         if (query.length === 0) {
             dropdown.classList.remove("active");
+            updateSearchSelection(dropdown);
             return;
         }
 
@@ -37,55 +45,123 @@ function initSearch() {
     document.addEventListener("click", (e) => {
         if (!e.target.closest(".search-wrapper")) {
             dropdown.classList.remove("active");
+            selectedSearchIndex = -1;
+            updateSearchSelection(dropdown);
         }
     });
 
-    // Navigate on enter with first result
     input.addEventListener("keydown", (e) => {
+        const results = getSearchResults(dropdown);
+
+        if (e.key === "ArrowDown") {
+            if (results.length === 0) return;
+            e.preventDefault();
+            moveSearchSelection(dropdown, 1);
+            return;
+        }
+
+        if (e.key === "ArrowUp") {
+            if (results.length === 0) return;
+            e.preventDefault();
+            moveSearchSelection(dropdown, -1);
+            return;
+        }
+
+        if (e.key === "Escape") {
+            dropdown.classList.remove("active");
+            selectedSearchIndex = -1;
+            updateSearchSelection(dropdown);
+            return;
+        }
+
         if (e.key === "Enter") {
-            const firstItem = dropdown.querySelector(".search-result-item");
-            if (firstItem) {
-                firstItem.click();
-            } else {
-                const query = input.value.trim().toUpperCase();
-                if (query) navigateToStock(query);
+            const selectedItem = results[selectedSearchIndex];
+            const firstItem = results[0];
+            const targetItem = selectedItem || firstItem;
+
+            if (targetItem) {
+                e.preventDefault();
+                targetItem.click();
+                return;
+            }
+
+            const query = input.value.trim().toUpperCase();
+            if (query) {
+                navigateToStock(query);
             }
         }
     });
 }
 
-async function performSearch(query) {
-    const dropdown = document.getElementById("search-dropdown");
+function navigateToStock(symbol) {
+    window.location.href = `stock.html?symbol=${encodeURIComponent(symbol)}`;
+}
 
-    dropdown.innerHTML = `<div class="search-loading"><i class="fa-solid fa-spinner fa-spin"></i> Searching...</div>`;
-    dropdown.classList.add("active");
-
+/* Yash Patel, 04/17/2026 
+Retrieves, cleans, deduplicates, and returns saved stock symbols from localStorage safely*/
+function getSavedStocks() {
     try {
-        const data = await searchStocks(query);
-        if (data.results.length === 0) {
-            dropdown.innerHTML = `<div class="search-no-results">No results found for "${query}"</div>`;
-            return;
-        }
+        const saved = JSON.parse(localStorage.getItem(SAVED_STOCKS_KEY) || "[]");
+        if (!Array.isArray(saved)) return [];
 
-        dropdown.innerHTML = data.results
-            .slice(0, 8)
-            .map(
-                (r) => `
-                <div class="search-result-item" onclick="navigateToStock('${r.symbol}')">
-                    <span class="symbol">${r.symbol}</span>
-                    <span class="name">${r.name}</span>
-                    <span class="exchange">${r.exchange}</span>
-                </div>
-            `
-            )
-            .join("");
-    } catch (err) {
-        dropdown.innerHTML = `<div class="search-no-results">Search error. Is the backend running?</div>`;
+        return saved
+            .map((symbol) => String(symbol || "").trim().toUpperCase())
+            .filter((symbol, index, arr) => symbol && arr.indexOf(symbol) === index);
+    } catch {
+        return [];
     }
 }
 
-function navigateToStock(symbol) {
-    window.location.href = `stock.html?symbol=${encodeURIComponent(symbol)}`;
+window.getSavedStocks = getSavedStocks;
+
+function getSearchResults(dropdown) {
+    return Array.from(dropdown.querySelectorAll(".search-result-item"));
+}
+
+function moveSearchSelection(dropdown, direction) {
+    const results = getSearchResults(dropdown);
+    if (results.length === 0) return;
+
+    selectedSearchIndex =
+        selectedSearchIndex < 0
+            ? direction > 0
+                ? 0
+                : results.length - 1
+            : (selectedSearchIndex + direction + results.length) % results.length;
+
+    updateSearchSelection(dropdown);
+}
+
+function updateSearchSelection(dropdown) {
+    const results = getSearchResults(dropdown);
+
+    results.forEach((item, index) => {
+        const isSelected = index === selectedSearchIndex;
+        item.style.backgroundColor = isSelected ? "rgba(88, 166, 255, 0.12)" : "";
+        item.style.outline = isSelected ? "1px solid rgba(88, 166, 255, 0.35)" : "";
+        item.style.borderRadius = isSelected ? "10px" : "";
+        item.setAttribute("aria-selected", isSelected ? "true" : "false");
+
+        if (isSelected) {
+            item.scrollIntoView({ block: "nearest" });
+        }
+    });
+}
+
+function attachSearchResultInteractions(dropdown) {
+    const results = getSearchResults(dropdown);
+
+    results.forEach((item, index) => {
+        item.addEventListener("mouseenter", () => {
+            selectedSearchIndex = index;
+            updateSearchSelection(dropdown);
+        });
+
+        item.addEventListener("mouseleave", () => {
+            selectedSearchIndex = -1;
+            updateSearchSelection(dropdown);
+        });
+    });
 }
 
 // ===== Trending Stocks =====
@@ -139,6 +215,106 @@ async function loadWatchlistStocks() {
         grid.innerHTML = "";
     }
 }
+
+/* Yash Patel, 04/17/2026
+Loads saved stocks, fetches cards, and displays successful results in grid*/
+/* Kevin Ngo - US17: Each saved stock card shows BUY/SELL/HOLD signal and a remove button */
+async function loadSavedStocks() {
+    const grid = document.getElementById("saved-stocks-grid");
+    if (!grid) return;
+
+    const savedSymbols = getSavedStocks();
+
+    if (savedSymbols.length === 0) {
+        grid.innerHTML = "";
+        return;
+    }
+
+    try {
+        const cards = await Promise.allSettled(
+            savedSymbols.map((sym) => loadSavedStockCard(sym))
+        );
+
+        const html = cards
+            .filter((r) => r.status === "fulfilled" && r.value)
+            .map((r) => r.value)
+            .join("");
+
+        if (html) {
+            grid.innerHTML = html;
+            attachRemoveButtons(grid);
+        } else {
+            grid.innerHTML = "";
+        }
+    } catch {
+        grid.innerHTML = "";
+    }
+}
+
+/* Kevin Ngo - US17: Loads a saved stock card with price data and BUY/SELL/HOLD signal badge */
+async function loadSavedStockCard(symbol) {
+    try {
+        const [stockData, signalData] = await Promise.allSettled([
+            getStock(symbol),
+            getSignals(symbol),
+        ]);
+
+        if (stockData.status !== "fulfilled" || !stockData.value) return null;
+        const data = stockData.value;
+
+        const changeClass = data.change >= 0 ? "positive" : "negative";
+        const changeIcon = data.change >= 0 ? "fa-caret-up" : "fa-caret-down";
+        const changeSign = data.change >= 0 ? "+" : "";
+
+        let signalBadge = "";
+        if (signalData.status === "fulfilled" && signalData.value) {
+            const sig = signalData.value.signal.toLowerCase();
+            signalBadge = `<span class="signal-badge-sm ${sig}" style="margin-left:auto">${signalData.value.signal}</span>`;
+        }
+
+        return `
+            <div class="stock-card" onclick="navigateToStock('${data.symbol}')">
+                <div class="stock-header">
+                    <div>
+                        <div class="ticker">${data.symbol}</div>
+                        <div class="stock-name">${data.name}</div>
+                    </div>
+                    ${signalBadge}
+                </div>
+                <div class="price">$${data.price.toFixed(2)}</div>
+                <div class="change ${changeClass}">
+                    <i class="fa-solid ${changeIcon}"></i>
+                    ${changeSign}${data.change.toFixed(2)} (${changeSign}${data.changePercent.toFixed(2)}%)
+                </div>
+                <button class="btn-remove-saved" data-symbol="${data.symbol}" onclick="event.stopPropagation(); removeSavedStock('${data.symbol}')">
+                    <i class="fa-solid fa-xmark"></i> Remove
+                </button>
+            </div>
+        `;
+    } catch {
+        return null;
+    }
+}
+
+/* Kevin Ngo - US17: Attaches click handlers to remove buttons already in the DOM */
+function attachRemoveButtons(grid) {
+    grid.querySelectorAll(".btn-remove-saved").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            removeSavedStock(btn.getAttribute("data-symbol"));
+        });
+    });
+}
+
+/* Kevin Ngo - US17: Removes a stock from saved list and refreshes the grid */
+function removeSavedStock(symbol) {
+    const normalizedSymbol = String(symbol || "").trim().toUpperCase();
+    const current = getSavedStocks().filter((s) => s !== normalizedSymbol);
+    localStorage.setItem(SAVED_STOCKS_KEY, JSON.stringify(current));
+    loadSavedStocks();
+}
+
+window.removeSavedStock = removeSavedStock;
 
 async function loadStockCard(symbol) {
     try {

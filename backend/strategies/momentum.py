@@ -1,6 +1,23 @@
 import logging
 import numpy as np
 from services.data_fetcher import get_historical_dataframe
+from strategies.config import (
+    MOMENTUM_MIN_PERIODS,
+    MOMENTUM_ROC_SHORT_WINDOW,
+    MOMENTUM_ROC_LONG_WINDOW,
+    MOMENTUM_ABS_MULTIPLIER,
+    MOMENTUM_ROC_SHORT_WEIGHT,
+    MOMENTUM_ROC_LONG_WEIGHT,
+    MOMENTUM_ROC_DIVISOR,
+    MOMENTUM_REL_MULTIPLIER,
+    MOMENTUM_WEIGHT_ABS,
+    MOMENTUM_WEIGHT_ROC,
+    MOMENTUM_WEIGHT_REL,
+    SIGNAL_BUY_THRESHOLD,
+    SIGNAL_SELL_THRESHOLD,
+)
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +31,7 @@ def calculate_momentum(symbol):
     """
     try:
         df = get_historical_dataframe(symbol, period="1y")
-        if df is None or len(df) < 60:
+        if df is None or len(df) < MOMENTUM_MIN_PERIODS:
             return None
 
         closes = df["Close"].values
@@ -23,34 +40,34 @@ def calculate_momentum(symbol):
         total_return = (closes[-1] - closes[0]) / closes[0]
 
         # Rate of Change (ROC) - multiple timeframes
-        roc_20 = (closes[-1] - closes[-20]) / closes[-20] if len(closes) >= 20 else 0
-        roc_60 = (closes[-1] - closes[-60]) / closes[-60] if len(closes) >= 60 else 0
+        roc_20 = (closes[-1] - closes[-MOMENTUM_ROC_SHORT_WINDOW]) / closes[-MOMENTUM_ROC_SHORT_WINDOW] if len(closes) >= MOMENTUM_ROC_SHORT_WINDOW else 0
+        roc_60 = (closes[-1] - closes[-MOMENTUM_ROC_LONG_WINDOW]) / closes[-MOMENTUM_ROC_LONG_WINDOW] if len(closes) >= MOMENTUM_ROC_LONG_WINDOW else 0
 
         # Relative momentum vs SPY benchmark
         spy_df = get_historical_dataframe("SPY", period="1y")
         relative_score = 0
-        if spy_df is not None and len(spy_df) >= 60:
+        if spy_df is not None and len(spy_df) >= MOMENTUM_MIN_PERIODS:
             spy_closes = spy_df["Close"].values
             spy_return = (spy_closes[-1] - spy_closes[0]) / spy_closes[0]
             relative_score = total_return - spy_return
 
         # Combine signals
         # Absolute: positive return = bullish
-        abs_signal = np.clip(total_return * 2, -1, 1)
+        abs_signal = np.clip(total_return * MOMENTUM_ABS_MULTIPLIER, -1, 1)
 
-        # ROC combined (short + medium term) — weighted avg: weights sum to 5
-        roc_signal = np.clip((roc_20 * 3 + roc_60 * 2) / 5, -1, 1)
+        # ROC combined (short + medium term) — weighted avg
+        roc_signal = np.clip((roc_20 * MOMENTUM_ROC_SHORT_WEIGHT + roc_60 * MOMENTUM_ROC_LONG_WEIGHT) / MOMENTUM_ROC_DIVISOR, -1, 1)
 
         # Relative: outperforming benchmark = bullish
-        rel_signal = np.clip(relative_score * 3, -1, 1)
+        rel_signal = np.clip(relative_score * MOMENTUM_REL_MULTIPLIER, -1, 1)
 
         # Weighted combination
-        score = 0.4 * abs_signal + 0.3 * roc_signal + 0.3 * rel_signal
+        score = MOMENTUM_WEIGHT_ABS * abs_signal + MOMENTUM_WEIGHT_ROC * roc_signal + MOMENTUM_WEIGHT_REL * rel_signal
         score = float(np.clip(score, -1, 1))
 
-        if score > 0.2:
+        if score > SIGNAL_BUY_THRESHOLD:
             signal = "BUY"
-        elif score < -0.2:
+        elif score < SIGNAL_SELL_THRESHOLD:
             signal = "SELL"
         else:
             signal = "HOLD"

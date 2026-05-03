@@ -13,8 +13,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showError("No stock symbol provided.");
         return;
     }
+/* Yash Patel, 04/17/2026
+call new function with save button*/
 
     document.title = `${currentSymbol.toUpperCase()} - Macropulse`;
+    initSaveButton();
     loadStockPage(currentSymbol);
     initChartControls();
 });
@@ -29,12 +32,38 @@ async function loadStockPage(symbol) {
         document.getElementById("page-loading").style.display = "none";
         document.getElementById("stock-content").style.display = "block";
 
-        // Load signals and chart in parallel
+        // Load signals, chart, and signal history in parallel
         loadSignals(symbol);
         loadChart(symbol, "1y");
+        loadSignalHistory(symbol);
     } catch (err) {
         showError(err.message || `Could not find stock "${symbol}".`);
     }
+}
+
+/* Anurag Ravi, 04/23/2026
+Skeleton loader functions for the metrics and strategy sections */
+function showMetricsSkeleton() {
+    const grid = document.getElementById("metrics-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(6).fill(`
+        <div class="metric-item">
+            <div class="skeleton skeleton-label"></div>
+            <div class="skeleton skeleton-value"></div>
+        </div>
+    `).join("");
+}
+
+function showStrategySkeleton() {
+    const grid = document.getElementById("strategies-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(4).fill(`
+        <div class="strategy-card">
+            <div class="skeleton skeleton-strategy-header"></div>
+            <div class="skeleton skeleton-strategy-score"></div>
+            <div class="skeleton skeleton-strategy-detail"></div>
+        </div>
+    `).join("");
 }
 
 function renderStockHero(data) {
@@ -53,8 +82,12 @@ function renderStockHero(data) {
     changeEl.className = `price-change ${isPositive ? "positive" : "negative"}`;
     changeEl.style.color = isPositive ? "var(--accent-green)" : "var(--accent-red)";
 
+/* Yash Patel, 04/27/2026
+Updates save button using current stock symbol*/
+
     // Key metrics
     renderMetrics(data);
+    updateSaveButton(data.symbol);
 }
 
 function renderMetrics(data) {
@@ -147,12 +180,18 @@ function renderStrategies(breakdown) {
 // ===== Chart =====
 
 async function loadChart(symbol, period) {
+    /* Anurag Ravi, 04/23/2026
+    Show loading overlay while chart data is being fetched */
+    showChartLoading("price-chart");
     try {
         const data = await getStockHistory(symbol, period);
         if (data && data.history && data.history.length > 0) {
             renderPriceChart("price-chart", data.history);
+        } else {
+            hideChartLoading("price-chart");
         }
     } catch (err) {
+        hideChartLoading("price-chart");
         console.error("Chart load failed:", err);
     }
 }
@@ -167,6 +206,97 @@ function initChartControls() {
             if (currentSymbol) loadChart(currentSymbol, period);
         });
     });
+}
+
+/* Yash Patel, 04/17/2026
+Initializes save button, stores unique stocks, and updates button state based on saved list*/
+function initSaveButton() {
+    const saveButton = document.getElementById("save-stock-btn");
+    if (!saveButton) return;
+
+    saveButton.addEventListener("click", () => {
+        if (!currentSymbol) return;
+
+        const normalizedSymbol = currentSymbol.toUpperCase();
+        const savedStocks = getStoredSavedStocks();
+
+        if (!savedStocks.includes(normalizedSymbol)) {
+            savedStocks.push(normalizedSymbol);
+            localStorage.setItem("macropulseSavedStocks", JSON.stringify(savedStocks));
+        }
+
+        updateSaveButton(normalizedSymbol);
+    });
+}
+
+function getStoredSavedStocks() {
+    try {
+        const saved = JSON.parse(localStorage.getItem("macropulseSavedStocks") || "[]");
+        if (!Array.isArray(saved)) return [];
+
+        return saved
+            .map((symbol) => String(symbol || "").trim().toUpperCase())
+            .filter((symbol, index, arr) => symbol && arr.indexOf(symbol) === index);
+    } catch {
+        return [];
+    }
+}
+
+function updateSaveButton(symbol) {
+    const saveButton = document.getElementById("save-stock-btn");
+    if (!saveButton) return;
+
+    const isSaved = getStoredSavedStocks().includes(String(symbol || "").toUpperCase());
+    saveButton.textContent = isSaved ? "Saved" : "Save";
+    saveButton.disabled = isSaved;
+    saveButton.classList.toggle("saved", isSaved);
+}
+
+// ===== Signal History (Anurag Ravi - US16) =====
+
+async function loadSignalHistory(symbol) {
+    const loadingEl = document.getElementById("history-loading");
+    const listEl = document.getElementById("signal-history-list");
+    if (!loadingEl || !listEl) return;
+
+    try {
+        const data = await getSignalHistory(symbol);
+        loadingEl.style.display = "none";
+        listEl.style.display = "block";
+
+        if (!data.history || data.history.length === 0) {
+            listEl.innerHTML = `<div class="empty-state" style="padding:1rem 0"><p>No history yet — signal will be recorded when you visit this page.</p></div>`;
+            return;
+        }
+
+        // Show most recent entries first
+        renderSignalHistory([...data.history].reverse());
+    } catch {
+        if (loadingEl) loadingEl.style.display = "none";
+    }
+}
+
+function renderSignalHistory(history) {
+    const listEl = document.getElementById("signal-history-list");
+    if (!listEl) return;
+
+    const rows = history.map((entry) => {
+        const signalLower = (entry.signal || "hold").toLowerCase();
+        const date = new Date(entry.timestamp);
+        const formatted = date.toLocaleString(undefined, {
+            month: "short", day: "numeric",
+            hour: "2-digit", minute: "2-digit",
+        });
+        return `
+            <div class="history-entry">
+                <span class="signal-badge-sm ${signalLower}">${entry.signal}</span>
+                <span class="history-confidence">${entry.confidence}% confidence</span>
+                <span class="history-timestamp">${formatted}</span>
+            </div>
+        `;
+    }).join("");
+
+    listEl.innerHTML = `<div class="history-list">${rows}</div>`;
 }
 
 // ===== Helpers =====

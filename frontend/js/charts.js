@@ -2,11 +2,54 @@
  * Macropulse - Chart.js price and volume charts.
  */
 
+/**
+ * More changes for CSV export
+ * Anurag Ravi 4/16/2026 
+ * 
+ */
 let priceChart = null;
+let lastChartRender = null;
+let lastChartData = null;
+
+// Person 2 - Sprint 2: Show/hide loading overlay on chart wrapper
+function showChartLoading(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const wrapper = canvas.closest(".chart-canvas-wrapper");
+    if (!wrapper) return;
+    if (!wrapper.querySelector(".chart-loading-overlay")) {
+        const overlay = document.createElement("div");
+        overlay.className = "chart-loading-overlay";
+        overlay.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading chart...`;
+        wrapper.style.position = "relative";
+        wrapper.appendChild(overlay);
+    }
+}
+
+function hideChartLoading(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const wrapper = canvas.closest(".chart-canvas-wrapper");
+    if (!wrapper) return;
+    const overlay = wrapper.querySelector(".chart-loading-overlay");
+    if (overlay) overlay.remove();
+}
 
 function renderPriceChart(canvasId, historyData) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
+    lastChartRender = { canvasId, historyData };
+    lastChartData = historyData;
+    hideChartLoading(canvasId);
+
+    const styles = getComputedStyle(document.documentElement);
+    const borderColor = styles.getPropertyValue("--border").trim();
+    const textPrimary = styles.getPropertyValue("--text-primary").trim();
+    const textSecondary = styles.getPropertyValue("--text-secondary").trim();
+    const bgSecondary = styles.getPropertyValue("--bg-secondary").trim();
+    const accentBlue = styles.getPropertyValue("--accent-blue").trim();
+    const accentGreen = styles.getPropertyValue("--accent-green").trim();
+    const accentRed = styles.getPropertyValue("--accent-red").trim();
 
     // Destroy existing chart
     if (priceChart) {
@@ -22,7 +65,7 @@ function renderPriceChart(canvasId, historyData) {
     const firstPrice = closePrices[0];
     const lastPrice = closePrices[closePrices.length - 1];
     const isUp = lastPrice >= firstPrice;
-    const lineColor = isUp ? "#3fb950" : "#f85149";
+    const lineColor = isUp ? accentGreen : accentRed;
     const fillColor = isUp ? "rgba(63, 185, 80, 0.08)" : "rgba(248, 81, 73, 0.08)";
 
     // Scale volumes to fit in bottom portion of chart
@@ -55,7 +98,7 @@ function renderPriceChart(canvasId, historyData) {
                     label: "Volume",
                     data: scaledVolumes,
                     type: "bar",
-                    backgroundColor: "rgba(88, 166, 255, 0.15)",
+                    backgroundColor: hexToRgba(accentBlue, 0.15),
                     borderColor: "transparent",
                     yAxisID: "y",
                     barPercentage: 0.8,
@@ -72,11 +115,11 @@ function renderPriceChart(canvasId, historyData) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: "#161b22",
-                    borderColor: "#30363d",
+                    backgroundColor: bgSecondary,
+                    borderColor: borderColor,
                     borderWidth: 1,
-                    titleColor: "#e6edf3",
-                    bodyColor: "#8b949e",
+                    titleColor: textPrimary,
+                    bodyColor: textSecondary,
                     padding: 12,
                     callbacks: {
                         label: function (context) {
@@ -91,24 +134,71 @@ function renderPriceChart(canvasId, historyData) {
             },
             scales: {
                 x: {
-                    grid: { color: "rgba(48, 54, 61, 0.5)" },
+                    grid: { color: hexToRgba(borderColor, 0.5) },
                     ticks: {
-                        color: "#6e7681",
+                        color: textSecondary,
                         maxTicksLimit: 8,
                         maxRotation: 0,
                     },
-                    border: { color: "#30363d" },
+                    border: { color: borderColor },
                 },
                 y: {
                     position: "right",
-                    grid: { color: "rgba(48, 54, 61, 0.5)" },
+                    grid: { color: hexToRgba(borderColor, 0.5) },
                     ticks: {
-                        color: "#6e7681",
+                        color: textSecondary,
                         callback: (val) => "$" + val.toFixed(0),
                     },
-                    border: { color: "#30363d" },
+                    border: { color: borderColor },
                 },
             },
         },
     });
+}
+
+function hexToRgba(color, alpha) {
+    const hex = color.replace("#", "").trim();
+    if (hex.length !== 6) return color;
+
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+window.addEventListener("macropulsePreferencesChanged", () => {
+    if (lastChartRender) {
+        renderPriceChart(lastChartRender.canvasId, lastChartRender.historyData);
+    }
+});
+/**
+ * Export current chart data as CSV file
+ * Anurag Ravi 4/16/2026 
+ * 
+ */
+function exportChartDataAsCSV() {
+    if (!lastChartData || lastChartData.length === 0) {
+        alert("No chart data available to export");
+        return;
+    }
+
+    // Build CSV header and rows
+    let csvContent = "Date,Close Price,Volume\n";
+    lastChartData.forEach((dataPoint) => {
+        const date = dataPoint.date;
+        const close = dataPoint.close.toFixed(2);
+        const volume = Math.round(dataPoint.volume);
+        csvContent += `${date},${close},${volume}\n`;
+    });
+
+    // Create blob and trigger download
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `chart-data-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 }

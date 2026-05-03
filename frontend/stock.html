@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Details - Macropulse</title>
+    <script>
+        try {
+            const prefs = JSON.parse(localStorage.getItem("macropulsePreferences") || "{}");
+            document.documentElement.setAttribute("data-theme", prefs.theme || "dark");
+        } catch {
+            document.documentElement.setAttribute("data-theme", "dark");
+        }
+    </script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -17,7 +25,15 @@
                 Macropulse
             </a>
             <div class="navbar-links">
-                <a href="index.html">Dashboard</a>
+                <a href="index.html" class="active">Dashboard</a>
+                <a href="settings.html">Settings</a>
+                <a href="settings.html" class="profile-button" data-profile-button aria-label="Open settings">
+                    <span class="profile-avatar">
+                        <img data-profile-image alt="Profile picture" hidden>
+                        <span data-profile-initials>G</span>
+                    </span>
+                    <span data-profile-status>Sign in</span>
+                </a>
             </div>
         </div>
     </nav>
@@ -53,6 +69,9 @@
                             <span class="symbol-tag" id="stock-symbol">--</span>
                         </div>
                         <div class="sector-tag" id="stock-sector">--</div>
+                         <!-- Yash Patel, 04/10/2026
+                         Added button to any stock page-->
+                        <button type="button" class="btn btn-save-stock" id="save-stock-btn">Save</button>
                     </div>
                     <div class="stock-price-block">
                         <div class="current-price" id="stock-price">--</div>
@@ -93,6 +112,21 @@
             </div>
             <div class="strategies-grid" id="strategies-grid">
                 <!-- Filled by JS -->
+            </div>
+        </section>
+
+        <!-- Anurag Ravi - US16: Signal History Panel -->
+        <section class="container">
+            <div class="section-title">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Signal History</span>
+            </div>
+            <div id="signal-history-container">
+                <div class="loading-spinner" id="history-loading">
+                    <i class="fa-solid fa-spinner"></i>
+                    <span>Loading history...</span>
+                </div>
+                <div id="signal-history-list" style="display:none"></div>
             </div>
         </section>
 
@@ -138,6 +172,7 @@
     </footer>
 
     <script src="js/api.js"></script>
+    <script src="js/preferences.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/stock.js"></script>
 </body>
